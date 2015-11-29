@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>專案建置器</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="content/style.css">
+    <link rel="stylesheet" type="text/css" href="content/font-awesome.min.css">
+</head>
+<body>
+<div id="wrapper">
+    <header id="header">
+        <h1>專案建置器</h1>
+    </header>
+    <nav id="nav">
+        <ul class="nav-ul circle-container">
+            <li class="nav-li">
+                <span class="text">Mobilewebmall</span>
+                <a class="btn build-btn" data-site-type="mobilewebmall"><i class="fa fa-rocket"></i></a>
+                <a class="btn history-btn" data-site-type="mobilewebmall"><i class="fa fa-history"></i></a>
+                <a class="btn watch-btn" data-site-type="mobilewebmall"><i class="fa fa-eye"></i></a>
+            </li>
+            <li class="nav-li">
+                <span class="text">Erp</span>
+                <a class="btn build-btn" data-site-type="erp"><i class="fa fa-rocket"></i></a>
+                <a class="btn history-btn" data-site-type="erp"><i class="fa fa-history"></i></a>
+            </li>
+            <li class="nav-li">
+                <span class="text">Erpv2</span>
+                <a class="btn build-btn" data-site-type="erpv2"><i class="fa fa-rocket"></i></a>
+                <a class="btn history-btn" data-site-type="erpv2"><i class="fa fa-history"></i></a>
+            </li>
+            <li class="nav-li">
+                <span class="text">Scm</span>
+                <a class="btn build-btn" data-site-type="scm"><i class="fa fa-rocket"></i></a>
+                <a class="btn history-btn" data-site-type="scm"><i class="fa fa-history"></i></a>
+            </li>
+            <li class="nav-li">
+                <span class="text">Scmv2</span>
+                <a class="btn build-btn" data-site-type="scmv2"><i class="fa fa-rocket"></i></a>
+                <a class="btn history-btn" data-site-type="scmv2"><i class="fa fa-history"></i></a>
+            </li>
+        </ul>
+    </nav>
+    <pre class="history-text"></pre>
+    <footer id="footer">91APP  <a class="go-top">▲</a></footer>
+</div>
+
+<script>
+    var ipc = require("electron-safe-ipc/guest");
+    var child_process = require('child_process');
+    var fs = require('fs');
+    var buildingItem;
+    //console.log(process);
+    //console.log(__dirname);
+
+    document.addEventListener('DOMContentLoaded', function (e) {
+        var buildBtns = document.querySelectorAll('.build-btn');
+        var historyBtns = document.querySelectorAll('.history-btn');
+        var watchBtns = document.querySelectorAll('.watch-btn');
+
+        [].slice.call(buildBtns).forEach(function(item){
+            item.addEventListener('click', function(e){
+                item.classList.add('building');
+                buildingItem = item;
+                buildSite(item.dataset.siteType);
+            })
+        });
+
+        [].slice.call(historyBtns).forEach(function(item){
+            item.addEventListener('click', function(e){
+                getSiteBuildHistory(item.dataset.siteType);
+            })
+        });
+
+        [].slice.call(watchBtns).forEach(function(item){
+            item.addEventListener('click', function(e){
+                runGulpWatch(item.dataset.siteType);
+            })
+        })
+
+        document.querySelector('.go-top').addEventListener('click', function(e){
+            window.scrollTo(0,0);
+        });
+
+
+        ipc.on('buildResultFromMain', function(state){
+            console.log(state);
+            switch(state){
+                case 'succeeded':
+                    buildingItem.classList.remove('building');
+                    buildingItem.classList.add('build-success');
+                    break;
+                case 'failure':
+                    buildingItem.classList.remove('building');
+                    buildingItem.classList.add('build-failure');
+                    break;
+                default:
+            }
+        })
+
+
+        function buildSite(siteName){
+            console.log('start build ' + siteName);
+            //// send to node.js
+            ipc.send('clickItemFromRenderer', siteName);
+        }
+
+        function getSiteBuildHistory(siteName){
+             console.log('get build history:' + siteName);
+             document.querySelector('.history-text').innerHTML = "";
+             fs.readFile(__dirname + '/history.json', function(err, data){
+                if(err){
+                    console.log(err);
+                    return;
+                }
+                var allHistory = JSON.parse(data);
+                var siteHistory = allHistory[siteName];
+                if(siteHistory.length <= 0){
+                    alert('還無資料可顯示');
+                    return;
+                }
+                //console.log(siteHistory[siteHistory.length - 1].result);
+                document.querySelector('.history-text').innerHTML = siteName + '建置結果<br/>' +siteHistory[siteHistory.length - 1].result;
+            })
+        }
+
+        function runGulpWatch(siteName){
+            console.log('run gulp watch:' + siteName);
+            child_process.exec('cd c:\\91Project && watcher.bat ' + siteName, function(err, stdout, stderr){
+                if(err){
+                    console.log(err);
+                    return;
+                }
+                if(stderr){
+                    console.log(stderr);
+                    return;
+                }
+                
+            })
+        }
+
+    })
+</script>
+</body>
+</html>
