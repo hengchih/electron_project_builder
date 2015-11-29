@@ -1,0 +1,14 @@
+{
+  "name": "builder",
+  "version": "1.0.0",
+  "description": "a GUI can build f2e project",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron main.js"
+  },
+  "author": "chrischang",
+  "license": "ISC",
+  "dependencies": {
+    "electron-safe-ipc": "^0.6.1"
+  }
+}
